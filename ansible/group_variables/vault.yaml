@@ -1,0 +1,5 @@
+---
+# Sensitive variables (encrypt with ansible-vault)
+team_server_password: "SecurePass123!"
+aws_access_key_id: "AKIAXXXXXXXXXXXXXXXX"
+aws_secret_access_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

@@ -1,0 +1,68 @@
+---
+- name: Install Java
+  apt:
+    name: openjdk-11-jre
+    state: present
+
+- name: Install AWS CLI
+  pip:
+    name: awscli
+    state: present
+
+- name: Create Cobalt Strike directory
+  file:
+    path: /opt/cobaltstrike
+    state: directory
+    mode: '0755'
+
+- name: Download Cobalt Strike from S3
+  aws_s3:
+    bucket: "{{ s3_bucket | regex_replace('^s3://', '') }}"
+    object: "/cobaltstrike/cobaltstrike.zip"
+    dest: /opt/cobaltstrike.zip
+    mode: get
+    aws_access_key: "{{ aws_access_key_id }}"
+    aws_secret_key: "{{ aws_secret_access_key }}"
+    region: "{{ aws_region }}"
+
+- name: Unzip Cobalt Strike
+  unarchive:
+    src: /opt/cobaltstrike.zip
+    dest: /opt/cobaltstrike
+    remote_src: yes
+    mode: '0755'
+
+- name: Download Malleable C2 profile from S3
+  aws_s3:
+    bucket: "{{ s3_bucket | regex_replace('^s3://', '') }}"
+    object: "/configs/corporate_api.c2"
+    dest: /opt/cobaltstrike/corporate_api.c2
+    mode: get
+    aws_access_key: "{{ aws_access_key_id }}"
+    aws_secret_key: "{{ aws_secret_access_key }}"
+    region: "{{ aws_region }}"
+
+- name: Validate Malleable C2 profile
+  command: /opt/cobaltstrike/c2lint /opt/cobaltstrike/corporate_api.c2
+  register: c2lint_result
+  failed_when: c2lint_result.rc != 0
+  changed_when: false
+
+- name: Allow redirector IPs in UFW
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+    from_ip: "{{ hostvars[groups['redirectors'][loop.index0]]['ansible_host'] }}"
+  loop:
+    - 80
+    - 443
+  when: groups['redirectors'] is defined
+
+- name: Start Cobalt Strike Team Server
+  command: >
+    /opt/cobaltstrike/teamserver {{ team_server_ip }} {{ team_server_password }} /opt/cobaltstrike/corporate_api.c2
+  async: 0
+  poll: 0
+  environment:
+    JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64

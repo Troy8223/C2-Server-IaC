@@ -1,0 +1,10 @@
+---
+# General variables
+team_server_ip: "{{ hostvars[groups['team_server'][0]]['ansible_host'] }}"
+redirector_domain: "api-corp-services.com"
+s3_bucket: "s3://redteam-artifacts"
+cobaltstrike_s3_path: "{{ s3_bucket }}/cobaltstrike/cobaltstrike.zip"
+c2_profile_s3_path: "{{ s3_bucket }}/configs/corporate_api.c2"
+nginx_config_s3_path: "{{ s3_bucket }}/configs/nginx_redirector.conf"
+aws_region: "us-east-1"
+letsencrypt_email: "admin@corp-services.com"

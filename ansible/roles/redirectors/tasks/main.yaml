@@ -1,0 +1,53 @@
+---
+- name: Install Nginx and Certbot
+  apt:
+    name:
+      - nginx
+      - python3-certbot-nginx
+    state: present
+
+- name: Download Nginx config from S3
+  aws_s3:
+    bucket: "{{ s3_bucket | regex_replace('^s3://', '') }}"
+    object: "/configs/nginx_redirector.conf"
+    dest: /etc/nginx/sites-available/c2_redirector
+    mode: get
+    aws_access_key: "{{ aws_access_key_id }}"
+    aws_secret_key: "{{ aws_secret_access_key }}"
+    region: "{{ aws_region }}"
+
+- name: Replace Team Server IP in Nginx config
+  replace:
+    path: /etc/nginx/sites-available/c2_redirector
+    regexp: '{{ team_server_ip }}'
+    replace: "{{ team_server_ip }}"
+    mode: '0644'
+
+- name: Enable Nginx config
+  file:
+    src: /etc/nginx/sites-available/c2_redirector
+    dest: /etc/nginx/sites-enabled/c2_redirector
+    state: link
+  notify: Reload Nginx
+
+- name: Allow HTTP/HTTPS in UFW
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - 80
+    - 443
+
+- name: Obtain Let’s Encrypt certificate
+  command: >
+    certbot --nginx -d {{ redirector_domain }} --non-interactive --agree-tos --email {{ letsencrypt_email }}
+  register: certbot_result
+  changed_when: certbot_result.rc == 0
+  failed_when: certbot_result.rc != 0 and "already exists" not in certbot_result.stderr
+
+- name: Reload Nginx
+  service:
+    name: nginx
+    state: reloaded
+  when: certbot_result.changed

@@ -1,0 +1,36 @@
+---
+- name: Update apt cache and upgrade packages
+  apt:
+    update_cache: yes
+    upgrade: dist
+    cache_valid_time: 3600
+
+- name: Install common packages
+  apt:
+    name:
+      - ufw
+      - unzip
+      - python3-pip
+    state: present
+
+- name: Disable unnecessary services
+  systemd:
+    name: "{{ item }}"
+    enabled: no
+    state: stopped
+  loop:
+    - bluetooth
+    - avahi-daemon
+  ignore_errors: yes
+
+- name: Enable and configure UFW
+  ufw:
+    state: enabled
+    policy: deny
+    logging: on
+
+- name: Allow SSH access
+  ufw:
+    rule: allow
+    port: 22
+    proto: tcp
