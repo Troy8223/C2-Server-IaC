@@ -8,6 +8,7 @@
   pip:
     name: awscli
     state: present
+    extra_args: "--break-system-packages"
 
 - name: Create Cobalt Strike directory
   file:
@@ -21,12 +22,13 @@
     object: "/cobaltstrike/cobaltstrike.zip"
     dest: /opt/cobaltstrike.zip
     mode: get
-    aws_access_key: "{{ aws_access_key_id }}"
-    aws_secret_key: "{{ aws_secret_access_key }}"
     region: "{{ aws_region }}"
-
-- name: Unzip Cobalt Strike with password
-  command: "unzip -P www.ddosi.org /opt/cobaltstrike.zip -d /opt/cobaltstrike"
+    # Uncomment the following lines if you need to use AWS credentials
+    # aws_access_key: "{{ aws_access_key_id }}"
+    # aws_secret_key: "{{ aws_secret_access_key }}"
+    
+- name: Unzip Cobalt Strike
+  command: "unzip /opt/cobaltstrike.zip -d /opt/cobaltstrike"
   args:
     creates: /opt/cobaltstrike/teamserver
 
@@ -36,6 +38,7 @@
 #     object: "/configs/corporate_api.c2"
 #     dest: /opt/cobaltstrike/corporate_api.c2
 #     mode: get
+#      # Uncomment the following lines if you need to use AWS credentials
 #     aws_access_key: "{{ aws_access_key_id }}"
 #     aws_secret_key: "{{ aws_secret_access_key }}"
 #     region: "{{ aws_region }}"
@@ -49,18 +52,33 @@
 - name: Allow redirector IPs in UFW
   ufw:
     rule: allow
-    port: "{{ item }}"
+    port: "{{ item.1 }}"
     proto: tcp
-    from_ip: "{{ hostvars[groups['redirectors'][loop.index0]]['ansible_host'] }}"
-  loop:
-    - 80
-    - 443
+    from_ip: "{{ hostvars[item.0]['ansible_host'] }}"
+  loop: "{{ redirector_ip_port_pairs }}"
+  loop_control:
+    label: "{{ hostvars[item.0]['ansible_host'] }}:{{ item.1 }}"
+  vars:
+    redirector_ip_port_pairs: >-
+      {{ groups['redirectors'] | product([80, 443]) | list }}
   when: groups['redirectors'] is defined
 
-# - name: Start Cobalt Strike Team Server
-#   command: >
-#     /opt/cobaltstrike/teamserver {{ teamserver_ip }} {{ teamserver_password }} /opt/cobaltstrike/corporate_api.c2
-#   async: 0
-#   poll: 0
-#   environment:
-#     JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
+- name: Add execution permission to teamserver
+  file:
+    path: /opt/cobaltstrike/teamserver
+    mode: '0755'
+
+- name: Add execution permission to TeamServerImage
+  file:
+    path: /opt/cobaltstrike/TeamServerImage
+    mode: '0755'
+
+- name: Start Cobalt Strike Team Server
+  command: >
+    /opt/cobaltstrike/teamserver {{ teamserver_ip }} {{ teamserver_password }} /opt/cobaltstrike/corporate_api.c2
+  args:
+    chdir: /opt/cobaltstrike
+  async: 0
+  poll: 0
+  environment:
+    JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
