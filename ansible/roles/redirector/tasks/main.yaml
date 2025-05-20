@@ -12,15 +12,17 @@
     object: "/configs/nginx_redirector.conf"
     dest: /etc/nginx/sites-available/c2_redirector
     mode: get
-    aws_access_key: "{{ aws_access_key_id }}"
-    aws_secret_key: "{{ aws_secret_access_key }}"
     region: "{{ aws_region }}"
+    
+    # Uncomment the following lines if you need to use AWS credentials
+    #aws_access_key: "{{ aws_access_key_id }}"
+    #aws_secret_key: "{{ aws_secret_access_key }}"
 
 - name: Replace Team Server IP in Nginx config
   replace:
     path: /etc/nginx/sites-available/c2_redirector
-    regexp: '{{ team_server_ip }}'
-    replace: "{{ team_server_ip }}"
+    regexp: 'TEAM_SERVER_IP_PLACEHOLDER'
+    replace: "{{ teamserver_ip }}"
     mode: '0644'
 
 - name: Enable Nginx config
@@ -41,7 +43,7 @@
 
 - name: Obtain Let’s Encrypt certificate
   command: >
-    certbot --nginx -d {{ redirector_domain }} --non-interactive --agree-tos --email {{ letsencrypt_email }}
+    sudo certbot --nginx -d {{ redirector_domain }} --non-interactive --agree-tos --email {{ letsencrypt_email }}
   register: certbot_result
   changed_when: certbot_result.rc == 0
   failed_when: certbot_result.rc != 0 and "already exists" not in certbot_result.stderr

@@ -1,20 +1,20 @@
 ---
 - name: Configure Cobalt Strike Team Server
-  hosts: team_server
+  hosts: teamserver
   become: yes
   vars_files:
-    - group_vars/general.yml
-    - group_vars/vault.yml
+    - group_variables/general.yaml
+    - group_variables/vault.yaml
   roles:
     - common
-    - team_server
+    - teamserver
 
 - name: Configure Nginx Redirectors
   hosts: redirectors
   become: yes
   vars_files:
-    - group_vars/general.yml
-    - group_vars/vault.yml
+    - group_variables/general.yaml
+    - group_variables/vault.yaml
   roles:
     - common
     - redirector
