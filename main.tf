@@ -36,14 +36,20 @@ provider "aws" {
         from_port   = 80
         to_port     = 80
         protocol    = "tcp"
-        cidr_blocks = [aws_instance.redirector[0].private_ip, aws_instance.redirector[1].private_ip]
+        cidr_blocks = [
+          "${aws_instance.redirector[0].private_ip}/32",
+          "${aws_instance.redirector[1].private_ip}/32"
+        ]
       }
 
       ingress {
         from_port   = 443
         to_port     = 443
         protocol    = "tcp"
-        cidr_blocks = [aws_instance.redirector[0].private_ip, aws_instance.redirector[1].private_ip]
+        cidr_blocks = [
+          "${aws_instance.redirector[0].private_ip}/32",
+          "${aws_instance.redirector[1].private_ip}/32"
+        ]
       }
 
       egress {
