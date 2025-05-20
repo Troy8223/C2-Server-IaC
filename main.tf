@@ -4,7 +4,7 @@ provider "aws" {
 
     # Team Server Instance
     resource "aws_instance" "team_server" {
-      ami           = "ami-0c55b159cbfafe1f0" # Ubuntu 20.04
+      ami           = "ami-01938df366ac2d954" # Ubuntu 24.04 LTS
       instance_type = "t2.medium"
       key_name      = "redteam-key"
       security_groups = [aws_security_group.team_server_sg.name]
@@ -17,7 +17,7 @@ provider "aws" {
     # Redirector Instances
     resource "aws_instance" "redirector" {
       count         = 2
-      ami           = "ami-0c55b159cbfafe1f0"
+      ami           = "ami-01938df366ac2d954"
       instance_type = "t2.micro"
       key_name      = "redteam-key"
       security_groups = [aws_security_group.redirector_sg.name]
