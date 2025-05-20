@@ -4,16 +4,18 @@ all:
     teamserver:
       hosts:
         teamserver_1:
-          ansible_host: <team_server_public_ip>
+          ansible_host: 127.0.0.1
           ansible_user: ubuntu
           ansible_ssh_private_key_file: ~/.ssh/redteam-key
     redirectors:
       hosts:
         redirector_1:
-          ansible_host: <redirector_1_public_ip>
+          ansible_host: 127.0.0.1
           ansible_user: ubuntu
           ansible_ssh_private_key_file: ~/.ssh/redteam-key
+          redirector_domain: api1.example.com
         redirector_2:
-          ansible_host: <redirector_2_public_ip>
+          ansible_host: 127.0.0.1
           ansible_user: ubuntu
           ansible_ssh_private_key_file: ~/.ssh/redteam-key
+          redirector_domain: api2.example.com
